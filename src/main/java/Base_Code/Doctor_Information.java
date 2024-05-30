@@ -11,6 +11,7 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import io.github.bonigarcia.wdm.WebDriverManager;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
+
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -31,7 +32,7 @@ public class Doctor_Information {
         WebDriver driver = new EdgeDriver();
         driver.manage().window().maximize();
 
-        List<String> urls = readUrlsFromExcel("DoctorUrl.xlsx");
+        List<String> urls = readUrlsFromExcel("DoctorUrls.xlsx");
         List<DoctorData> doctorDataList = new ArrayList<>();
 
         for (String url : urls) {
@@ -52,8 +53,9 @@ public class Doctor_Information {
                 String doctorEducation = getText(driver, "//*[@class='educationbox']/p[2]");
                 String[] additionalPhotosUrls = getAdditionalPhotos(driver);
                 String[][] clinicData = getClinicData(driver);
+                String[][] clinicAdditionalData = getClinicAdditionalData(driver);
 
-                DoctorData doctorData = new DoctorData(doctorName, doctorProfileImage, doctorSpecialization, doctorRating, doctorEducation, additionalPhotosUrls, clinicData);
+                DoctorData doctorData = new DoctorData(doctorName, doctorProfileImage, doctorSpecialization, doctorRating, doctorEducation, additionalPhotosUrls, clinicData, clinicAdditionalData);
                 doctorDataList.add(doctorData);
 
                 logger.info("Doctor Name: " + doctorName);
@@ -146,7 +148,31 @@ public class Doctor_Information {
         }
         return clinicData;
     }
+    private static String[][] getClinicAdditionalData(WebDriver driver) {
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(30));
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("doctorclinics")));
+        List<WebElement> clinicAddress = driver.findElements(By.xpath("//*[@id='doctorclinics']/div/p[2]"));
+        List<WebElement> clinicTimming = driver.findElements(By.xpath("//*[@id='doctorclinics']/div/div/div"));
 
+        String[][] clinicAdditionalData = new String[5][2];
+        for (int i = 0; i < 5; i++) {
+            clinicAdditionalData[i][0] = i < clinicAddress.size() ? clinicAddress.get(i).getText() : "NA";
+
+            if (i < clinicTimming.size()) {
+                WebElement parentDiv = clinicTimming.get(i);
+                List<WebElement> pTags = parentDiv.findElements(By.tagName("p"));
+                StringBuilder timings = new StringBuilder();
+                for (WebElement pTag : pTags) {
+                    timings.append(pTag.getText()).append(", ");
+                }
+                clinicAdditionalData[i][1] = timings.toString().trim();
+            } else {
+                clinicAdditionalData[i][1] = "NA";
+            }
+        }
+        
+        return clinicAdditionalData;
+    }
     private static String extractImageUrl(String styleAttribute) {
         String imageUrl = "";
         if (styleAttribute != null && styleAttribute.contains("background-image: url(")) {
@@ -170,7 +196,9 @@ public class Doctor_Information {
                 "Doctor Additional Photo 3", "Doctor Additional Photo 4", "Doctor Additional Photo 5",
                 "Doctor Clinic Name 1", "Doctor Clinic Name 2", "Doctor Clinic Name 3", "Doctor Clinic Name 4",
                 "Doctor Clinic Name 5", "Doctor Clinic Phone No. 1", "Doctor Clinic Phone No. 2",
-                "Doctor Clinic Phone No. 3", "Doctor Clinic Phone No. 4", "Doctor Clinic Phone No. 5"
+                "Doctor Clinic Phone No. 3", "Doctor Clinic Phone No. 4", "Doctor Clinic Phone No. 5","Clinic Address 1",
+                "Clinic Address 2", "Clinic Address 3", "Clinic Address 4", "Clinic Address 5","Clinic Timmings 1",
+                "Clinic Timmings 2","Clinic Timmings 2","Clinic Timmings 3","Clinic Timmings 4","Clinic Timmings 5"
             };
 
             Row headerRow = sheet.createRow(0);
@@ -200,6 +228,11 @@ public class Doctor_Information {
                     dataRow.createCell(10 + i).setCellValue(clinicData[i][0]);
                     dataRow.createCell(15 + i).setCellValue(clinicData[i][1]);
                 }
+                String[][] clinicAdditionalData = doctorData.getClinicAdditionalData();
+                for (int i = 0; i < clinicAdditionalData.length; i++) {
+                    dataRow.createCell(20 + i).setCellValue(clinicAdditionalData[i][0]);
+                    dataRow.createCell(25 + i).setCellValue(clinicAdditionalData[i][1]);
+                }
             }
 
             // Writing to Excel file
@@ -223,8 +256,9 @@ class DoctorData {
     private String education;
     private String[] additionalPhotos;
     private String[][] clinicData;
-
-    public DoctorData(String doctorName, String profileImage, String specialization, String rating, String education, String[] additionalPhotos, String[][] clinicData) {
+    private String[][] clinicAdditionalData;
+    
+    public DoctorData(String doctorName, String profileImage, String specialization, String rating, String education, String[] additionalPhotos, String[][] clinicData,String[][]clinicAdditionalData) {
         this.doctorName = doctorName;
         this.profileImage = profileImage;
         this.specialization = specialization;
@@ -232,6 +266,7 @@ class DoctorData {
         this.education = education;
         this.additionalPhotos = additionalPhotos;
         this.clinicData = clinicData;
+        this.clinicAdditionalData = clinicAdditionalData;
     }
 
     public String getDoctorName() {
@@ -260,5 +295,8 @@ class DoctorData {
 
     public String[][] getClinicData() {
         return clinicData;
+    }
+    public String[][] getClinicAdditionalData() {
+        return clinicAdditionalData;
     }
 }

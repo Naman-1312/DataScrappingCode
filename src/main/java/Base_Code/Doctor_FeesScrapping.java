@@ -2,8 +2,10 @@ package Base_Code;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.List;
-
+import java.util.NoSuchElementException;
+import java.util.Set;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.openqa.selenium.By;
@@ -23,6 +25,7 @@ public class Doctor_FeesScrapping {
 
         // Url opening
         driver.get("https://kivihealth.com/jaipur/doctors");
+        Set<String> uniqueUrls = new HashSet<>();
 
         try (Workbook workbook = new XSSFWorkbook(); FileOutputStream fileOut = new FileOutputStream("DoctorFeesInfo.xlsx")) {
             Sheet sheet = workbook.createSheet("Doctor Info");
@@ -30,6 +33,7 @@ public class Doctor_FeesScrapping {
             headerRow.createCell(0).setCellValue("Doctor Name");
             headerRow.createCell(1).setCellValue("Doctor Fees");
             headerRow.createCell(2).setCellValue("Doctor Interested Areas");
+            headerRow.createCell(3).setCellValue("Doctor Profile Url");
 
             int rowNum = 1;
             while (true) {
@@ -43,31 +47,38 @@ public class Doctor_FeesScrapping {
                         String doctorInterestAreas = element.findElement(By.xpath(".//h5[2]")).getAttribute("innerText");
                         try {
                             doctorFees = element.findElement(By.className("fee-charges")).getText();
-                        } catch (org.openqa.selenium.NoSuchElementException e) {
+                        } catch (NoSuchElementException e) {
                             doctorFees = "NA";
                         }
 
+                        String imageprofileUrl;
+                        try {
+                            imageprofileUrl = element.findElement(By.xpath(".//img")).getAttribute("src");
+                        } catch (NoSuchElementException e) {
+                            imageprofileUrl = "NA";
+                        }
+
                         Row row = sheet.createRow(rowNum++);
-                        if (doctorName != null && !doctorName.isEmpty()) {
-                            row.createCell(0).setCellValue(doctorName);
-                        } else {
-                            row.createCell(0).setCellValue("NA");
-                        }
-                        if (doctorFees != null && !doctorFees.isEmpty()) {
-                            row.createCell(1).setCellValue(doctorFees);
-                        } else {
-                            row.createCell(1).setCellValue("NA");
-                        }
-                        if (doctorInterestAreas != null && !doctorInterestAreas.isEmpty()) {
-                            row.createCell(2).setCellValue(doctorInterestAreas);
-                        } else {
-                            row.createCell(2).setCellValue("NA");
-                        }
+                        row.createCell(0).setCellValue(doctorName != null && !doctorName.isEmpty() ? doctorName : "NA");
+                        row.createCell(1).setCellValue(doctorFees != null && !doctorFees.isEmpty() ? doctorFees : "NA");
+                        row.createCell(2).setCellValue(doctorInterestAreas != null && !doctorInterestAreas.isEmpty() ? doctorInterestAreas : "NA");
+                        row.createCell(3).setCellValue(imageprofileUrl != null && !imageprofileUrl.isEmpty() ? imageprofileUrl : "NA");
 
                         System.out.println("Doctor Name: " + doctorName);
                         System.out.println("Doctor Fees: " + doctorFees);
                         System.out.println("Doctor Specialization: " + doctorInterestAreas);
+                        System.out.println("Doctor Profile Image: " + imageprofileUrl);
                     }
+                    
+                    List<WebElement> links = driver.findElements(By.tagName("a"));
+                    // Loop through each link and print the href attribute if it matches a specific pattern
+                    for (WebElement link : links) {
+                        String url = link.getAttribute("href");
+                        if (url != null && url.contains("iam")) {
+                            uniqueUrls.add(url);
+                        }
+                    }
+                    
                     driver.findElement(By.xpath("//i[contains(text(),'chevron_right')]")).click();
                 } catch (Exception e) {
                     System.out.println("Exception occurred. Saving the Excel file.");

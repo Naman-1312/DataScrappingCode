@@ -20,63 +20,69 @@ public class Doctor_URL {
         WebDriverManager.edgedriver().setup();
         driver = new EdgeDriver();
         driver.manage().window().maximize();
-        driver.get("https://kivihealth.com/jaipur/doctors");
+        driver.get("https://kivihealth.com/Belgaum/doctors");
 
         // Use a Set to store only distinct URLs
         Set<String> uniqueUrls = new HashSet<>();
 
         // Create a new workbook and sheet
         Workbook workbook = new XSSFWorkbook();
-        Sheet sheet = workbook.createSheet("Doctor URLs");
+        Sheet sheet = workbook.createSheet("BelgaumDoctorURLs");
 
         addColumnNames(sheet); // To add the column name in the excel sheet!
 
         // Variable to keep track of the row number
         int rowNum = 1;
 
-        while (true) {
-            try {
-                // Find all the anchor elements on the page
-                List<WebElement> links = driver.findElements(By.tagName("a"));
+        try {
+            while (true) {
+                try {
+                    // Find all the anchor elements on the page
+                    List<WebElement> links = driver.findElements(By.tagName("a"));
 
-                // Loop through each link and print the href attribute if it matches a specific pattern
-                for (WebElement link : links) {
-                    String url = link.getAttribute("href");
-                    if (url != null && url.contains("iam")) {
-                        uniqueUrls.add(url);
+                    // Loop through each link and print the href attribute if it matches a specific pattern
+                    for (WebElement link : links) {
+                        String url = link.getAttribute("href");
+                        if (url != null && url.contains("iam")) {
+                            uniqueUrls.add(url);
+                        }
                     }
-                }
 
-                // Click the 'Next' button to go to the next page
-                driver.findElement(By.xpath("//i[contains(text(),'chevron_right')]")).click();
-            } catch (NoSuchElementException e) {
-                break; // Exit the loop when 'chevron_right' element is not found
+                    // Click the 'Next' button to go to the next page
+                    driver.findElement(By.xpath("//i[contains(text(),'chevron_right')]")).click();
+                } catch (NoSuchElementException e) {
+                    break; // Exit the loop when 'chevron_right' element is not found
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            // Write the distinct URLs to the Excel sheet
+            for (String url : uniqueUrls) {
+                Row row = sheet.createRow(rowNum++);
+                Cell cell = row.createCell(0);
+                cell.setCellValue(url);
+            }
+
+            // Write the output to an Excel file
+            try (FileOutputStream fileOut = new FileOutputStream("BelgaumDoctorURLs.xlsx")) {
+                workbook.write(fileOut);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            // Close the workbook
+            try {
+                workbook.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            // Close the browser
+            if (driver != null) {
+                driver.quit();
             }
         }
-
-        // Write the distinct URLs to the Excel sheet
-        for (String url : uniqueUrls) {
-            Row row = sheet.createRow(rowNum++);
-            Cell cell = row.createCell(0);
-            cell.setCellValue(url);
-        }
-
-        // Write the output to an Excel file
-        try (FileOutputStream fileOut = new FileOutputStream("DoctorURLs.xlsx")) {
-            workbook.write(fileOut);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        // Close the workbook
-        try {
-            workbook.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        // Close the browser
-        driver.quit();
     }
 
     private static void addColumnNames(Sheet sheet) {
@@ -92,4 +98,3 @@ public class Doctor_URL {
         cell.setCellStyle(style);
     }
 }
-

@@ -32,15 +32,15 @@ public class Doctor_Information {
         WebDriver driver = new EdgeDriver();
         driver.manage().window().maximize();
 
-        List<String> urls = readUrlsFromExcel("DoctorUrls.xlsx");
+        List<String> urls = readUrlsFromExcel("DoctorURLs.xlsx");
         List<DoctorData> doctorDataList = new ArrayList<>();
 
         for (String url : urls) {
             driver.get(url);
             try {
-                System.out.println("**********************************************************");
+//                System.out.println("**********************************************************");
                 System.out.println("Doctor Url : " + url);
-                System.out.println();
+//                System.out.println();
                 Thread.sleep(2000); // Sleep for 2 seconds to wait for the page to load
             } catch (InterruptedException e) {
                 logger.error("Thread interrupted while waiting for page to load", e);
@@ -49,7 +49,7 @@ public class Doctor_Information {
                 String doctorName = getText(driver, ".//h1");
                 String doctorProfileImage = getCssValue(driver, ".doctoravtar", "background-image");
                 String doctorSpecialization = getText(driver, "//*[@id='doctorprofilecard']/div[1]/p");
-                String doctorRating = getText(driver, "//*[@id='doctorprofilecard']/div[2]/span[1]") + " Star";
+                String doctorRating = getText(driver, "//*[@id='doctorprofilecard']/div[2]/span[1]");
                 String doctorEducation = getText(driver, "//*[@class='educationbox']/p[2]");
                 String[] additionalPhotosUrls = getAdditionalPhotos(driver);
                 String[][] clinicData = getClinicData(driver);
@@ -66,11 +66,12 @@ public class Doctor_Information {
 
             } catch (Exception e) {
                 logger.error("Error scraping data from URL: " + url, e);
+                writeDataToExcel(doctorDataList, "ErrorData.xlsx");
             }
         }
 
         driver.quit();
-        writeDataToExcel(doctorDataList, "DoctorInfo.xlsx");
+        writeDataToExcel(doctorDataList, "BellaryDoctorInfo.xlsx");
     }
 
     private static List<String> readUrlsFromExcel(String filePath) {
@@ -148,6 +149,7 @@ public class Doctor_Information {
         }
         return clinicData;
     }
+
     private static String[][] getClinicAdditionalData(WebDriver driver) {
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(30));
         wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("doctorclinics")));
@@ -173,6 +175,7 @@ public class Doctor_Information {
         
         return clinicAdditionalData;
     }
+
     private static String extractImageUrl(String styleAttribute) {
         String imageUrl = "";
         if (styleAttribute != null && styleAttribute.contains("background-image: url(")) {
@@ -192,15 +195,14 @@ public class Doctor_Information {
             // Creating header row
             String[] columns = {
                 "Doctor Name", "Doctor Profile Image", "Doctor Specialization and Experience", "Doctor Rating",
-                "Doctor Education", "Doctor Additional Photo 1", "Doctor Additional Photo 2",
-                "Doctor Additional Photo 3", "Doctor Additional Photo 4", "Doctor Additional Photo 5",
+                "Doctor Education", "ServerImage1", "ServerImage2",
+                "ServerImage3", "ServerImage4", "ServerImage5",
                 "Doctor Clinic Name 1", "Doctor Clinic Name 2", "Doctor Clinic Name 3", "Doctor Clinic Name 4",
                 "Doctor Clinic Name 5", "Doctor Clinic Phone No. 1", "Doctor Clinic Phone No. 2",
                 "Doctor Clinic Phone No. 3", "Doctor Clinic Phone No. 4", "Doctor Clinic Phone No. 5","Clinic Address 1",
-                "Clinic Address 2", "Clinic Address 3", "Clinic Address 4", "Clinic Address 5","Clinic Timmings 1",
-                "Clinic Timmings 2","Clinic Timmings 2","Clinic Timmings 3","Clinic Timmings 4","Clinic Timmings 5"
+                "Clinic Address 2", "Clinic Address 3", "Clinic Address 4", "Clinic Address 5", "Clinic Timings 1",
+                "Clinic Timings 2", "Clinic Timings 3", "Clinic Timings 4", "Clinic Timings 5"
             };
-
             Row headerRow = sheet.createRow(0);
             for (int i = 0; i < columns.length; i++) {
                 Cell cell = headerRow.createCell(i);
@@ -210,93 +212,96 @@ public class Doctor_Information {
             // Creating data rows
             int rowNum = 1;
             for (DoctorData doctorData : doctorDataList) {
-                Row dataRow = sheet.createRow(rowNum++);
+                Row row = sheet.createRow(rowNum++);
+                row.createCell(0).setCellValue(doctorData.getDoctorName());
+                row.createCell(1).setCellValue(doctorData.getDoctorProfileImage());
+                row.createCell(2).setCellValue(doctorData.getDoctorSpecializationAndExperience());
+                row.createCell(3).setCellValue(doctorData.getDoctorRating());
+                row.createCell(4).setCellValue(doctorData.getDoctorEducation());
 
-                dataRow.createCell(0).setCellValue(doctorData.getDoctorName());
-                dataRow.createCell(1).setCellValue(doctorData.getProfileImage());
-                dataRow.createCell(2).setCellValue(doctorData.getSpecialization());
-                dataRow.createCell(3).setCellValue(doctorData.getRating());
-                dataRow.createCell(4).setCellValue(doctorData.getEducation());
-
-                String[] imageUrl = doctorData.getAdditionalPhotos();
-                for (int i = 0; i < imageUrl.length; i++) {
-                    dataRow.createCell(5 + i).setCellValue(imageUrl[i]);
+                String[] additionalPhotos = doctorData.getAdditionalPhotos();
+                for (int i = 0; i < additionalPhotos.length; i++) {
+                    row.createCell(5 + i).setCellValue(additionalPhotos[i]);
                 }
 
                 String[][] clinicData = doctorData.getClinicData();
                 for (int i = 0; i < clinicData.length; i++) {
-                    dataRow.createCell(10 + i).setCellValue(clinicData[i][0]);
-                    dataRow.createCell(15 + i).setCellValue(clinicData[i][1]);
+                    row.createCell(10 + i).setCellValue(clinicData[i][0]);
+                    row.createCell(15 + i).setCellValue(clinicData[i][1]);
                 }
+                
                 String[][] clinicAdditionalData = doctorData.getClinicAdditionalData();
                 for (int i = 0; i < clinicAdditionalData.length; i++) {
-                    dataRow.createCell(20 + i).setCellValue(clinicAdditionalData[i][0]);
-                    dataRow.createCell(25 + i).setCellValue(clinicAdditionalData[i][1]);
+                    row.createCell(20 + i).setCellValue(clinicAdditionalData[i][0]);
+                    row.createCell(25 + i).setCellValue(clinicAdditionalData[i][1]);
                 }
             }
 
-            // Writing to Excel file
-            try (FileOutputStream fileOut = new FileOutputStream(filePath)) {
-                workbook.write(fileOut);
+            // Auto-size all columns
+            for (int i = 0; i < columns.length; i++) {
+                sheet.autoSizeColumn(i);
             }
 
-            System.out.println("Doctor information successfully written in the Excel");
+            // Write the output to a file
+            try (FileOutputStream fos = new FileOutputStream(filePath)) {
+                workbook.write(fos);
+            }
         } catch (IOException e) {
-            logger.error("Error writing doctor information to Excel file", e);
+            logger.error("Error writing data to Excel file", e);
         }
     }
-}
 
-// Define the DoctorData class
-class DoctorData {
-    private String doctorName;
-    private String profileImage;
-    private String specialization;
-    private String rating;
-    private String education;
-    private String[] additionalPhotos;
-    private String[][] clinicData;
-    private String[][] clinicAdditionalData;
-    
-    public DoctorData(String doctorName, String profileImage, String specialization, String rating, String education, String[] additionalPhotos, String[][] clinicData,String[][]clinicAdditionalData) {
-        this.doctorName = doctorName;
-        this.profileImage = profileImage;
-        this.specialization = specialization;
-        this.rating = rating;
-        this.education = education;
-        this.additionalPhotos = additionalPhotos;
-        this.clinicData = clinicData;
-        this.clinicAdditionalData = clinicAdditionalData;
-    }
+    private static class DoctorData {
+        private final String doctorName;
+        private final String doctorProfileImage;
+        private final String doctorSpecializationAndExperience;
+        private final String doctorRating;
+        private final String doctorEducation;
+        private final String[] additionalPhotos;
+        private final String[][] clinicData;
+        private final String[][] clinicAdditionalData;
 
-    public String getDoctorName() {
-        return doctorName;
-    }
+        public DoctorData(String doctorName, String doctorProfileImage, String doctorSpecializationAndExperience, String doctorRating, String doctorEducation, String[] additionalPhotos, String[][] clinicData, String[][] clinicAdditionalData) {
+            this.doctorName = doctorName;
+            this.doctorProfileImage = doctorProfileImage;
+            this.doctorSpecializationAndExperience = doctorSpecializationAndExperience;
+            this.doctorRating = doctorRating;
+            this.doctorEducation = doctorEducation;
+            this.additionalPhotos = additionalPhotos;
+            this.clinicData = clinicData;
+            this.clinicAdditionalData = clinicAdditionalData;
+        }
 
-    public String getProfileImage() {
-        return profileImage;
-    }
+        public String getDoctorName() {
+            return doctorName;
+        }
 
-    public String getSpecialization() {
-        return specialization;
-    }
+        public String getDoctorProfileImage() {
+            return doctorProfileImage;
+        }
 
-    public String getRating() {
-        return rating;
-    }
+        public String getDoctorSpecializationAndExperience() {
+            return doctorSpecializationAndExperience;
+        }
 
-    public String getEducation() {
-        return education;
-    }
+        public String getDoctorRating() {
+            return doctorRating;
+        }
 
-    public String[] getAdditionalPhotos() {
-        return additionalPhotos;
-    }
+        public String getDoctorEducation() {
+            return doctorEducation;
+        }
 
-    public String[][] getClinicData() {
-        return clinicData;
-    }
-    public String[][] getClinicAdditionalData() {
-        return clinicAdditionalData;
+        public String[] getAdditionalPhotos() {
+            return additionalPhotos;
+        }
+
+        public String[][] getClinicData() {
+            return clinicData;
+        }
+        
+        public String[][] getClinicAdditionalData() {
+            return clinicAdditionalData;
+        }
     }
 }

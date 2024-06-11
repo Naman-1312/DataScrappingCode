@@ -10,11 +10,12 @@ import java.net.URL;
 
 public class Image_Saver {
     public static void main(String[] args) {
-        String excelFilePath = "D:\\Data_Scraping-Selenium\\target\\Doctor Details.xlsx"; 
+        String excelFilePath = "C:\\Users\\naman\\eclipse-workspace\\KiviDoctorData\\target\\GulbargDoctorProfilePhoto.xlsx"; 
 
         try (FileInputStream fis = new FileInputStream(excelFilePath);
              Workbook workbook = new XSSFWorkbook(fis)) {
 
+        	
             Sheet sheet = workbook.getSheetAt(0); // Assuming the first sheet
 
             for (Row row : sheet) {
@@ -30,7 +31,7 @@ public class Image_Saver {
                     // Replace spaces with underscores in the doctor name for the file name
                     String fileName = doctorName.replaceAll("\\s+", "_") + "_doctorprofile.jpg";
                     String downloadPath = "C:\\Users\\naman\\Desktop\\DoctorImage\\ " + fileName;
-
+// D:\KiviDoctorData\Ludhiana\LudhianaDoctorAdditionalPhotos
                     downloadImage(imageUrl, downloadPath);
                 }
             }

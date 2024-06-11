@@ -24,11 +24,11 @@ public class DoctorFrontProfile {
         driver.manage().window().maximize();
         
         // URL opening
-        driver.get("https://kivihealth.com/Erode/doctors");
+        driver.get("https://kivihealth.com/Bangalore/doctors");
 
         // Initialize Excel workbook and sheet
         Workbook workbook = new XSSFWorkbook();
-        Sheet sheet = workbook.createSheet("Erode Doctor Profile");
+        Sheet sheet = workbook.createSheet("Bangalore Doctor Profile");
         
         // Create header row
         Row headerRow = sheet.createRow(0);
@@ -91,7 +91,7 @@ public class DoctorFrontProfile {
             e.printStackTrace();
         } finally {
             // Save the Excel file
-            try (FileOutputStream fileOut = new FileOutputStream("ErodeDoctorFeeAndInterestedArea.xlsx")) {
+            try (FileOutputStream fileOut = new FileOutputStream("BangaloreDoctorFeeAndInterestedArea.xlsx")) {
                 workbook.write(fileOut);
             } catch (IOException e) {
                 e.printStackTrace();
